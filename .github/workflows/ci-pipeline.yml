@@ -1,0 +1,73 @@
+# test 5
+# Workflow 이름
+name: Build and Push Image to ACR (CI)
+
+# Github의 infra 브랜치에 코드가 push될 때 워크플로우 실행
+on:
+  push:
+    branches: [ infra ]
+
+# 워크플로우가 Git에 다시 Push할 수 있도록 권한 부여
+permissions:
+  contents: write
+
+# 환경변수 정의
+env:
+  ACR_NAME: tetrisgameacr
+  IMAGE_REPOSITORY: tetris-app
+
+jobs:
+  # ci 라는 이름의 작업 정의
+  ci:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. 소스 코드 체크아웃
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          # ✨ Git Push 하기 위한 Personal Access Token
+          token: ${{ secrets.PAT }}
+
+      # 2. 이미지 태그 설정
+      - name: Set image tag
+        id: set-image-tag
+        run: |
+          IMAGE_TAG=$(cat VERSION)
+          if [ -z "$IMAGE_TAG" ]; then
+            echo "Error: VERSION file is empty or does not exist."
+            exit 1
+          fi
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+      
+      # 3. ACR에 로그인
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_NAME }}.azurecr.io
+          username: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+          password: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+
+      # 4. Dockerfile로 이미지 build
+      - name: Build Docker image
+        run: |
+          docker build ./dev \
+            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPOSITORY }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+
+      # 5. 빌드된 Docker 이미지를 ACR로 push
+      - name: Push Docker image to ACR
+        run: |
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPOSITORY }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+
+      # ✨6. Git 설정 및 YAML 파일 업데이트
+      - name: Update Kubernetes manifest
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          sed -i "s|image:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPOSITORY }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/deployment.yaml
+
+      # 7. 변경된 YAML 파일을 infra 브랜치에 다시 Push
+      - name: Commit and push manifest changes
+        run: |
+          git diff --quiet || (git commit -am "chore(ci): Update image tag to ${{ steps.set-image-tag.outputs.IMAGE_TAG }}" && git push)
