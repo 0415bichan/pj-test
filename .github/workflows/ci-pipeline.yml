@@ -1,10 +1,12 @@
 # Workflow 이름
 name: Build and Push Frontend & Backend Images
 
-# Github의 main 브랜치에 코드가 push될 때 워크플로우 실행
+# Github main 브랜치의 VERSION 파일에 코드가 push될 때 워크플로우 실행
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'VERSION'
 
 # 워크플로우가 Git에 다시 Push할 수 있도록 권한 부여
 permissions:
