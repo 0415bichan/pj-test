@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
-import Header from './components/Header'; // ⭐ Header 컴포넌트를 import 합니다.
+import Header from './components/header.jsx'; // ⭐ Header 컴포넌트를 import 합니다.
 
 // 2. 각 URL 경로에서 보여줄 페이지 컴포넌트들을 가져옵니다.
 import MainPage from './pages/MainPage';
