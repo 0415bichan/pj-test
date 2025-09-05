@@ -1,0 +1,36 @@
+# 백엔드 애플리케이션을 어떻게 실행할지 정의
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tetris-backend
+spec:
+  replicas: 2 # 안정성을 위해 2개를 실행
+  selector:
+    matchLabels:
+      app: tetris-backend
+  template:
+    metadata:
+      labels:
+        app: tetris-backend
+    spec:
+      containers:
+      - name: backend-container
+        # CI 파이프라인이 ACR에 올린 백엔드 이미지를 사용
+        image: tetrisgameacr.azurecr.io/tetris-backend:1.0.0
+        ports:
+        - containerPort: 3000
+
+        # 컨테이너 건강 검진 설정
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
