@@ -1,6 +1,6 @@
 # --- STAGE 1: Build React App ---
 # Node.js 18-alpine 버전을 리액트 앱 빌더로 사용
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
