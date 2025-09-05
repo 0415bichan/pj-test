@@ -1,65 +1,64 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+// useNavigate는 더 이상 필요 없으므로 삭제해도 됩니다. (Header에서 처리)
+// useAuth도 더 이상 필요 없으므로 삭제합니다.
 import Loader from '@/components/Loader.jsx';
-import LogoutModal from '@/components/LogoutModal.jsx';
+// LogoutModal은 Header로 이동했으므로 여기서 삭제합니다.
 import TetrisAnimation from '@/components/TetrisAnimation';
+import TetrisPlayImage from '../components/TetrisPlayImage';
+import InstructionsModal from '../components/InstructionsModal';
 import './pages.css';
 
 const LobbyPage = () => {
   const [isMatching, setIsMatching] = useState(false);
-  const [estimatedTime, setEstimatedTime] = useState('');
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const navigate = useNavigate();
-  
-  // 실제로는 로그인 시 받아온 닉네임을 사용해야 합니다.
-  const nickname = "테트리스고수"; 
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+  const intervalRef = useRef(null);
 
   const handleMatchingClick = () => {
-    setIsMatching(true);
-    // 10초에서 5분(300초) 사이의 랜덤 시간 계산
-    const randomSeconds = Math.floor(Math.random() * (300 - 10 + 1)) + 10;
-    const minutes = Math.floor(randomSeconds / 60);
-    const seconds = randomSeconds % 60;
-    
-    if (minutes > 0) {
-      setEstimatedTime(`${minutes}분 ${seconds}초`);
-    } else {
-      setEstimatedTime(`${seconds}초`);
-    }
+    window.location.href = 'http://localhost:3001';
   };
 
-  const handleLogout = () => {
-    // 로그아웃 로직 실행 후 메인 페이지로 이동
-    console.log("로그아웃 되었습니다.");
-    navigate('/');
+  const handleCancelMatching = () => {
+    setIsMatching(false);
   };
+
+  useEffect(() => {
+    if (isMatching) {
+      intervalRef.current = setInterval(() => {
+        setElapsedTime(prevTime => prevTime + 1);
+      }, 1000);
+    } 
+    else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isMatching]);
 
   return (
     <div className="main-container">
       <TetrisAnimation />
-      {/* 우측 상단 닉네임 및 로그아웃 버튼 */}
-      <div className="top-right-user-info">
-        <span className="nickname">{nickname}</span>
-        <button className="logout-button" onClick={() => setShowLogoutModal(true)}>
-          로그아웃
-        </button>
-      </div>
+      {/* ↓↓↓ 이 부분의 top-right-user-info div 전체를 삭제합니다. ↓↓↓ */}
 
       <div className="content-box">
         {isMatching ? (
           <div className="matching-content">
             <Loader />
             <p className="matching-text">매칭하는 중...</p>
-            <p className="wait-time-text">예상 대기 시간 : {estimatedTime}</p>
+            <p className="wait-time-text">대기 시간 : {elapsedTime}초</p>
+            <button className="main-button secondary cancel-matching" onClick={handleCancelMatching}>
+              매칭 취소
+            </button>
           </div>
         ) : (
           <div className="lobby-content">
-            {/*  */}
-            <img 
-              src="https://i.imgur.com/3Z6kY9r.png" 
-              alt="테트리스 플레이 이미지" 
-              className="tetris-image"
-            />
+            <TetrisPlayImage />
             <button className="main-button login" onClick={handleMatchingClick}>
               매칭하기
             </button>
@@ -67,12 +66,17 @@ const LobbyPage = () => {
         )}
       </div>
 
-      {/* 로그아웃 모달 */}
-      {showLogoutModal && (
-        <LogoutModal
-          onConfirm={handleLogout}
-          onCancel={() => setShowLogoutModal(false)}
-        />
+      <div className="bottom-right-container">
+          <button className="instructions-button" onClick={() => setShowInstructionsModal(true)}>
+              게임설명서
+          </button>
+      </div>
+      
+      {/* ↓↓↓ 이 부분의 showLogoutModal 및 LogoutModal 렌더링 부분을 삭제합니다. ↓↓↓
+      */}
+
+      {showInstructionsModal && (
+        <InstructionsModal onClose={() => setShowInstructionsModal(false)} />
       )}
     </div>
   );
