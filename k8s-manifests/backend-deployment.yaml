@@ -16,7 +16,7 @@ spec:
       containers:
       - name: backend-container
         # CI 파이프라인이 ACR에 올린 백엔드 이미지를 사용
-        image: tetrisgameacr.azurecr.io/tetris-backend:2.0.0
+        image: tetrisgameacr.azurecr.io/tetris-backend:2.0.1
         ports:
         - containerPort: 3000
 
